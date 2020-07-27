@@ -13,8 +13,6 @@ namespace Domain
     public class FirebaseManager : MonoBehaviour
     {
         private DatabaseReference _reference;
-        private string _name;
-        private string _email;
 
         private async void Start()
         {
@@ -28,13 +26,8 @@ namespace Domain
             _reference = FirebaseDatabase.DefaultInstance.RootReference;
         }
 
-        public async void SignIn(string userName)
+        public async void GetHighScore()
         {
-            _name = userName;
-            if (_name == "") _name = "noname";
-            _email = _name + "@yahoo.com";
-            Debug.Log("Account Name: " + _email);
-
             await FirebaseDatabase.DefaultInstance.GetReference("users").GetValueAsync().ContinueWith(task =>
             {
                 if (!task.IsCompleted) return;
@@ -42,13 +35,13 @@ namespace Domain
 
                 foreach (var child in snapshot.Children)
                 {
-                    if (!child.Key.Equals(_name)) continue;
+                    if (!child.Key.Equals(FacebookManager.userId)) continue;
                     Debug.Log("Yet");
                     ScoreData.bestScore = int.Parse(child.Value.ToString());
                     return;
                 }
 
-                var childUpdates = new Dictionary<string, object> {[_name] = ScoreData.bestScore};
+                var childUpdates = new Dictionary<string, object> {[FacebookManager.userId] = ScoreData.bestScore};
                 _reference.Child("users").UpdateChildrenAsync(childUpdates);
                 Debug.Log("Not yet");
             });
@@ -57,7 +50,7 @@ namespace Domain
 
         public async void SaveScore()
         {
-            var childUpdates = new Dictionary<string, object> {[_name] = ScoreData.bestScore};
+            var childUpdates = new Dictionary<string, object> {[FacebookManager.userId] = ScoreData.bestScore};
             await _reference.Child("users").UpdateChildrenAsync(childUpdates);
         }
 
@@ -73,7 +66,7 @@ namespace Domain
                 foreach (var child in snapshot.Children.OrderBy(ch => ch.Value))
                 {
                     Debug.Log("scoreboard: " + child.Key + " " + child.Value);
-                    if (child.Key.Equals(_name))
+                    if (child.Key.Equals(FacebookManager.userId))
                     {
                         ScoreData.yourPosition = counter;
                         Debug.Log("write counter: " + counter);

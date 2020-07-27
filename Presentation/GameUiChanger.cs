@@ -12,9 +12,9 @@ namespace Presentation
             rectTransform.anchoredPosition = x;
         }
 
-        public void SetPosition(GameObject gameObject, Vector2 x)
+        public void SetPosition(GameObject go, Vector2 x)
         {
-            gameObject.GetComponent<RectTransform>().anchoredPosition = x;
+            go.GetComponent<RectTransform>().anchoredPosition = x;
         }
 
         public void SetText(Text text, string t)
@@ -22,9 +22,9 @@ namespace Presentation
             text.text = t;
         }
 
-        public void SetText(GameObject gameObject, string t)
+        public void SetText(GameObject go, string t)
         {
-            gameObject.GetComponent<Text>().text = t;
+            go.GetComponent<Text>().text = t;
         }
 
         public void SetColor(Image image, Color color)
@@ -37,14 +37,14 @@ namespace Presentation
             rectTransform.DOAnchorPos(x, time);
         }
         
-        public void ChangePosition(GameObject gameObject, Vector2 x, float time)
+        public void ChangePosition(GameObject go, Vector2 x, float time)
         {
-            gameObject.GetComponent<RectTransform>().DOAnchorPos(x, time);
+            go.GetComponent<RectTransform>().DOAnchorPos(x, time);
         }
 
-        public void ShakePosition(GameObject gameObject, float time)
+        public void ShakePosition(GameObject go, float time)
         {
-            gameObject.transform.DOShakePosition(time, new Vector3(6f, 3f, 3f), 5, 20);
+            go.transform.DOShakePosition(time, new Vector3(6f, 3f, 3f), 5, 20);
         }
 
         public IEnumerator CoChangeNumber(Text text, int oldNum, int newNum) {

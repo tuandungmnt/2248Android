@@ -12,32 +12,36 @@ namespace Domain
         public Button scoreBoardButton;
         public Button closeScoreBoardButton;
         public Button shareButton;
+        public Button facebookButton;
         public Text scoreTagText;
         public Text scoreText;
 
         private ScoreBoardPresenter _scoreBoardPresenter;
+        private AudioManager _audioManager;
 
         private void Start()
         {
             _scoreBoardPresenter = FindObjectOfType<ScoreBoardPresenter>();
+            _audioManager = FindObjectOfType<AudioManager>();
+            
             AddButtonListener();
             UpdateScene();
         
             FindObjectOfType<AdsManager>().PlayInitializeAds();
-            FindObjectOfType<AudioManager>().Play("End");
+            _audioManager.Play("End");
         }
 
         private void AddButtonListener()
         {
             replayButton.onClick.AddListener(() => 
             {
-                FindObjectOfType<AudioManager>().Play("Click");
+                _audioManager.Play("Click");
                 SceneManager.LoadScene(1);
             });  
         
             scoreBoardButton.onClick.AddListener(async () =>
             {
-                FindObjectOfType<AudioManager>().Play("Click");
+                _audioManager.Play("Click");
                 await FindObjectOfType<FirebaseManager>().UpdateScoreBoard();
                 Debug.Log("hello");
                 _scoreBoardPresenter.UpdateScoreBoard(ScoreData.yourPosition.ToString());
@@ -48,13 +52,20 @@ namespace Domain
         
             closeScoreBoardButton.onClick.AddListener(() =>
             {    
-                FindObjectOfType<AudioManager>().Play("Click");
+                _audioManager.Play("Click");
                 FindObjectOfType<ScoreBoardPresenter>().HideScoreBoard();
             });
+            
             shareButton.onClick.AddListener(() =>
             {
-                FindObjectOfType<AudioManager>().Play("Click");
+                _audioManager.Play("Click");
                 FindObjectOfType<ShareManager>().Share();
+            });
+            
+            facebookButton.onClick.AddListener(() =>
+            {
+                _audioManager.Play("Click");
+                FindObjectOfType<FacebookManager>().Share();
             });
         }
 

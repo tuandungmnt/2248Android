@@ -25,7 +25,7 @@ namespace Presentation
                 _gameUiChanger.SetPosition(_nameText[i], new Vector2(0, 260 - 130 * i));
             
                 _scoreText[i] = FindObjectOfType<GameUiCreator>().CreateScoreText(scoreBoardPanel);
-                _gameUiChanger.SetPosition(_scoreText[i], new Vector2(0, 260 - 130 * i));
+                _gameUiChanger.SetPosition(_scoreText[i], new Vector2(0, 200 - 130 * i));
             }
         }
 

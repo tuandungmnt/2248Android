@@ -37,12 +37,19 @@ namespace Domain
                 {
                     if (!child.Key.Equals(FacebookManager.userId)) continue;
                     Debug.Log("Yet");
-                    ScoreData.bestScore = int.Parse(child.Value.ToString());
+                    foreach (var kid in child.Children)
+                    {
+                        if (kid.Key.Equals("score")) ScoreData.bestScore = int.Parse(kid.Value.ToString());
+                    }
                     return;
                 }
 
-                var childUpdates = new Dictionary<string, object> {[FacebookManager.userId] = ScoreData.bestScore};
-                _reference.Child("users").UpdateChildrenAsync(childUpdates);
+                var userId = new Dictionary<string, object> {[FacebookManager.userId] = "0"};
+                var bestScore = new Dictionary<string, object> {["score"] = ScoreData.bestScore};
+                var userName = new Dictionary<string, object> {["name"] = FacebookManager.userName};
+                _reference.Child("users").UpdateChildrenAsync(userId);
+                _reference.Child("users").Child(FacebookManager.userId).UpdateChildrenAsync(userName);
+                _reference.Child("users").Child(FacebookManager.userId).UpdateChildrenAsync(bestScore);
                 Debug.Log("Not yet");
             });
             Debug.Log("End signin " + ScoreData.bestScore);
@@ -50,8 +57,8 @@ namespace Domain
 
         public async void SaveScore()
         {
-            var childUpdates = new Dictionary<string, object> {[FacebookManager.userId] = ScoreData.bestScore};
-            await _reference.Child("users").UpdateChildrenAsync(childUpdates);
+            //var childUpdates = new Dictionary<string, object> {[FacebookManager.userId] = ScoreData.bestScore};
+            await _reference.Child("users").Child(FacebookManager.userId).Child("score").SetValueAsync(ScoreData.bestScore);
         }
 
         public async Task UpdateScoreBoard()
@@ -63,7 +70,7 @@ namespace Domain
                 var childNum = (int) snapshot.ChildrenCount;
                 var counter = childNum;
 
-                foreach (var child in snapshot.Children.OrderBy(ch => ch.Value))
+                foreach (var child in snapshot.Children.OrderBy(ch => ch.Child("score").Value))
                 {
                     Debug.Log("scoreboard: " + child.Key + " " + child.Value);
                     if (child.Key.Equals(FacebookManager.userId))
@@ -74,8 +81,11 @@ namespace Domain
                     
                     counter--;
                     if (counter >= 5) continue;
-                    ScoreData.scoreBoardName[counter] = child.Key;
-                    ScoreData.scoreBoardScore[counter] = child.Value.ToString();
+                    foreach (var n in child.Children)
+                    {
+                        if (n.Key.Equals("name")) ScoreData.scoreBoardName[counter] = n.Value.ToString();
+                        if (n.Key.Equals("score")) ScoreData.scoreBoardScore[counter] = n.Value.ToString();
+                    }
                 }
             });
         }

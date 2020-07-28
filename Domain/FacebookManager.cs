@@ -29,8 +29,21 @@ namespace Domain
 
         public void LogIn()
         {
-            var permissions = new List<string>() {"public_profile"};
+            var permissions = new List<string>() {"public_profile","email"};
             FB.LogInWithReadPermissions(permissions);
+        }
+
+        private void AuthCallBack(ILoginResult result)
+        {
+            if (FB.IsLoggedIn) {
+                var aToken = AccessToken.CurrentAccessToken;
+                Debug.Log(aToken.UserId);
+                foreach (var perm in aToken.Permissions) {
+                    Debug.Log(perm);
+                }
+            } else {
+                Debug.Log("User cancelled login");
+            }
         }
 
         public void LogOut()
@@ -40,6 +53,7 @@ namespace Domain
 
         public void Share()
         {
+            if (!FB.IsLoggedIn) return;
             FB.ShareLink(new Uri("https://www.youtube.com/watch?v=-op5cj6uknE"), 
                 "Facebook Share",
                 "Share Success", 
@@ -54,13 +68,16 @@ namespace Domain
         public void UpdateAccountInfo()
         {
             if (!FB.IsLoggedIn) return;
+            Debug.Log("In update account info");
             var aToken = AccessToken.CurrentAccessToken;
             userId = aToken.UserId;
-            FB.API("/me?fields=first_name", HttpMethod.GET, CallBack);
+            Debug.Log("userID: " + userId);
+            FB.API("/me?fields=name", HttpMethod.GET, CallBack);
         }
 
         private void CallBack(IGraphResult result)
         {
+            Debug.Log("Update account info call back");
             userName = result.ResultDictionary["name"].ToString();
             Debug.Log("fbName: " + userName);
         }

@@ -42,6 +42,16 @@ namespace Presentation
             go.GetComponent<RectTransform>().DOAnchorPos(x, time);
         }
 
+        public void ChangePosition(Button button, Vector2 x, float time)
+        {
+            button.GetComponent<RectTransform>().DOAnchorPos(x, time);
+        }
+        
+        public void ChangePosition(Text text, Vector2 x, float time)
+        {
+            text.GetComponent<RectTransform>().DOAnchorPos(x, time);
+        }
+
         public void ShakePosition(GameObject go, float time)
         {
             go.transform.DOShakePosition(time, new Vector3(6f, 3f, 3f), 5, 20);

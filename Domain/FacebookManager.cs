@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Data;
 using Facebook.Unity;
 using UnityEngine;
 
@@ -7,10 +8,6 @@ namespace Domain
 {
     public class FacebookManager : MonoBehaviour
     {
-        public static string userId;
-        public static string userName;
-        
-        
         private void Start()
         {
             if (!FB.IsInitialized)
@@ -29,8 +26,8 @@ namespace Domain
 
         public void LogIn()
         {
-            var permissions = new List<string>() {"public_profile","email"};
-            FB.LogInWithReadPermissions(permissions);
+            var permissions = new List<string>() {"public_profile"};
+            FB.LogInWithPublishPermissions(permissions, AuthCallBack);
         }
 
         private void AuthCallBack(ILoginResult result)
@@ -39,7 +36,7 @@ namespace Domain
                 var aToken = AccessToken.CurrentAccessToken;
                 Debug.Log(aToken.UserId);
                 foreach (var perm in aToken.Permissions) {
-                    Debug.Log(perm);
+                    Debug.Log("permissions: " + perm);
                 }
             } else {
                 Debug.Log("User cancelled login");
@@ -59,27 +56,27 @@ namespace Domain
                 "Share Success", 
                 new Uri("https://candyrat.azureedge.net/ImageGen.ashx?image=/media/10501/Don-Ross.jpg&width=468&height=468"));
         }
-        
+
         public bool IsLoggedIn()
         {
             return FB.IsLoggedIn;
         }
 
-        public void UpdateAccountInfo()
+        public void UpdateUserData()
         {
             if (!FB.IsLoggedIn) return;
             Debug.Log("In update account info");
             var aToken = AccessToken.CurrentAccessToken;
-            userId = aToken.UserId;
-            Debug.Log("userID: " + userId);
+            UserData.userId = aToken.UserId;
+            Debug.Log("userID: " + UserData.userId);
             FB.API("/me?fields=name", HttpMethod.GET, CallBack);
         }
 
         private void CallBack(IGraphResult result)
         {
             Debug.Log("Update account info call back");
-            userName = result.ResultDictionary["name"].ToString();
-            Debug.Log("fbName: " + userName);
+            UserData.userName = result.ResultDictionary["name"].ToString();
+            Debug.Log("fbName: " + UserData.userName);
         }
     }
 }

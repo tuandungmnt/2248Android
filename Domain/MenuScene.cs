@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using Data;
 using Presentation;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,14 +11,15 @@ namespace Domain
     {
         public Text welcomeText;
         public Text userNameText;
-        public Text inputText;
         public Text logInText;
         public Button playButton;
-        public Button logInButton;
+        public Button logOutButton;
+        public Button facebookLogInButton;
+        public Button googleLogInButton;
 
-        private FacebookManager _facebookManager;
         private GameUiChanger _gameUiChanger;
         private AudioManager _audioManager;
+        private PlatformManager _platformManager;
 
         private bool _oldStatus;
         private bool _newStatus;
@@ -25,9 +27,10 @@ namespace Domain
         
         private void Start()
         {
-            _facebookManager = FindObjectOfType<FacebookManager>();
             _gameUiChanger = FindObjectOfType<GameUiChanger>();
             _audioManager = FindObjectOfType<AudioManager>();
+            _platformManager = FindObjectOfType<PlatformManager>();
+            
             AddButtonListener();
             StartCoroutine(UpdateScene());
         }
@@ -40,18 +43,29 @@ namespace Domain
                 StartCoroutine(ChangeScene());
             });
             
-            logInButton.onClick.AddListener(() =>
+            logOutButton.onClick.AddListener(() =>
             {
                 _audioManager.Play("Click");
-                if (_facebookManager.IsLoggedIn()) _facebookManager.LogOut();
-                    else _facebookManager.LogIn();
+                _platformManager.LogOut();
+            });
+            
+            facebookLogInButton.onClick.AddListener(() =>
+            {
+                _audioManager.Play("Click");
+                _platformManager.LogIn("facebook");
+            });
+            
+            googleLogInButton.onClick.AddListener(() =>
+            {
+                _audioManager.Play("Click");
+                _platformManager.LogIn("google");
             });
         }
 
         private IEnumerator ChangeScene() 
         {
-            _gameUiChanger.ChangePosition(playButton.GetComponent<RectTransform>(), new Vector2(1000, 38), 0.7f);
-            _gameUiChanger.ChangePosition(welcomeText.GetComponent<RectTransform>(), new Vector2(-1000, 65), 0.7f);
+            _gameUiChanger.ChangePosition(playButton, new Vector2(1000, 38), 0.7f);
+            _gameUiChanger.ChangePosition(welcomeText, new Vector2(-1000, 65), 0.7f);
             yield return new WaitForSeconds(1f);
             SceneManager.LoadScene(1);
         }
@@ -61,27 +75,32 @@ namespace Domain
             while (true)
             {
                 yield return new WaitForSeconds(0.1f);
-                _newStatus = _facebookManager.IsLoggedIn();
+                _newStatus = _platformManager.IsLoggedIn();
                 if (_counter % 500 == 0) Debug.Log("Menu scene update: " + _newStatus);
                 _counter++;
                 if (_newStatus == _oldStatus) continue;
 
-                if (_newStatus)
+                if (_newStatus) 
                 {
-                    _facebookManager.UpdateAccountInfo();
-                    yield return new WaitForSeconds(2f);
-                    logInText.text = "Log Out";
-                    userNameText.text = FacebookManager.userName;
-                    Debug.Log("In menu, username: " + FacebookManager.userName);
-                    _gameUiChanger.ChangePosition(playButton.GetComponent<RectTransform>(),
-                        new Vector2(0, 100), 0.4f);
+                    _platformManager.UpdateUserData();
+                    yield return new WaitForSeconds(1.4f);
+                    
+                    userNameText.text = UserData.userName;
+                    _gameUiChanger.ChangePosition(facebookLogInButton, new Vector2(-500, 250), 0.4f);
+                    _gameUiChanger.ChangePosition(googleLogInButton, new Vector2(500, 250), 0.4f);
+
+                    
+                    _gameUiChanger.ChangePosition(playButton, new Vector2(0, 100), 0.4f);
+                    _gameUiChanger.ChangePosition(logOutButton, new Vector2(0, 300), 0.4f);
                 }
                 else
                 {
-                    logInText.text = "Log In";
                     userNameText.text = "";
-                    _gameUiChanger.ChangePosition(playButton.GetComponent<RectTransform>(),
-                        new Vector2(0, -200), 0.4f);
+                    _gameUiChanger.ChangePosition(facebookLogInButton, new Vector2(-120, 250), 0.4f);
+                    _gameUiChanger.ChangePosition(googleLogInButton, new Vector2(120, 250), 0.4f);
+                    
+                    _gameUiChanger.ChangePosition(playButton, new Vector2(0, -200), 0.4f);
+                    _gameUiChanger.ChangePosition(logOutButton, new Vector2(0, -200), 0.4f);
                 }
 
                 _oldStatus = _newStatus;

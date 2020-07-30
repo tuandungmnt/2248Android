@@ -26,8 +26,8 @@ namespace Domain
 
         public void LogIn()
         {
-            var permissions = new List<string>() {"public_profile"};
-            FB.LogInWithPublishPermissions(permissions, AuthCallBack);
+            var permissions = new List<string>() {"public_profile","email"};
+            FB.LogInWithReadPermissions(permissions, AuthCallBack);
         }
 
         private void AuthCallBack(ILoginResult result)
@@ -77,6 +77,7 @@ namespace Domain
             Debug.Log("Update account info call back");
             UserData.userName = result.ResultDictionary["name"].ToString();
             Debug.Log("fbName: " + UserData.userName);
+            MenuScene.finishUpdate = true;
         }
     }
 }

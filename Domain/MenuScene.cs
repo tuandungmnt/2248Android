@@ -11,7 +11,6 @@ namespace Domain
     {
         public Text welcomeText;
         public Text userNameText;
-        public Text logInText;
         public Button playButton;
         public Button logOutButton;
         public Button facebookLogInButton;
@@ -24,6 +23,8 @@ namespace Domain
         private bool _oldStatus;
         private bool _newStatus;
         private int _counter;
+        public static bool finishUpdate;
+        public static bool finishLoadHighScore;
         
         private void Start()
         {
@@ -39,6 +40,7 @@ namespace Domain
         {
             playButton.onClick.AddListener(() => {
                 _audioManager.Play("Click");
+                finishLoadHighScore = false;
                 FindObjectOfType<FirebaseManager>().GetHighScore();
                 StartCoroutine(ChangeScene());
             });
@@ -66,28 +68,31 @@ namespace Domain
         {
             _gameUiChanger.ChangePosition(playButton, new Vector2(1000, 38), 0.7f);
             _gameUiChanger.ChangePosition(welcomeText, new Vector2(-1000, 65), 0.7f);
-            yield return new WaitForSeconds(1f);
-            SceneManager.LoadScene(1);
+            yield return new WaitForSeconds(0.7f);
+            while (!finishLoadHighScore) yield return new WaitForSeconds(0.1f);
+                SceneManager.LoadScene(1);
         }
 
         private IEnumerator UpdateScene()
         {
+            yield return new WaitForSeconds(1f);
             while (true)
             {
                 yield return new WaitForSeconds(0.1f);
                 _newStatus = _platformManager.IsLoggedIn();
-                if (_counter % 500 == 0) Debug.Log("Menu scene update: " + _newStatus);
-                _counter++;
+                //if (_counter % 200 == 0) Debug.Log("Menu scene update: " + _newStatus);
+                //_counter++;
                 if (_newStatus == _oldStatus) continue;
 
                 if (_newStatus) 
-                {
+                {    
+                    finishUpdate = false;
                     _platformManager.UpdateUserData();
-                    yield return new WaitForSeconds(1.4f);
+                    while(!finishUpdate) yield return  new WaitForSeconds(0.1f);
                     
                     userNameText.text = UserData.userName;
-                    _gameUiChanger.ChangePosition(facebookLogInButton, new Vector2(-500, 250), 0.4f);
-                    _gameUiChanger.ChangePosition(googleLogInButton, new Vector2(500, 250), 0.4f);
+                    _gameUiChanger.ChangePosition(facebookLogInButton, new Vector2(-1000, 300), 0.4f);
+                    _gameUiChanger.ChangePosition(googleLogInButton, new Vector2(1000, 200), 0.4f);
 
                     
                     _gameUiChanger.ChangePosition(playButton, new Vector2(0, 100), 0.4f);
@@ -96,8 +101,8 @@ namespace Domain
                 else
                 {
                     userNameText.text = "";
-                    _gameUiChanger.ChangePosition(facebookLogInButton, new Vector2(-120, 250), 0.4f);
-                    _gameUiChanger.ChangePosition(googleLogInButton, new Vector2(120, 250), 0.4f);
+                    _gameUiChanger.ChangePosition(facebookLogInButton, new Vector2(0, 300), 0.4f);
+                    _gameUiChanger.ChangePosition(googleLogInButton, new Vector2(0, 200), 0.4f);
                     
                     _gameUiChanger.ChangePosition(playButton, new Vector2(0, -200), 0.4f);
                     _gameUiChanger.ChangePosition(logOutButton, new Vector2(0, -200), 0.4f);

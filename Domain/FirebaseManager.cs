@@ -8,6 +8,7 @@ using Firebase.Auth;
 using Firebase.Database;
 using Firebase.Unity.Editor;
 using UnityEngine;
+using Google;
 
 namespace Domain
 {
@@ -15,6 +16,7 @@ namespace Domain
     {
         private DatabaseReference _reference;
         private FirebaseAuth _auth;
+        private const string WebClientId = "653330373773-7t5sf0ib9neb5n7pup1mm75pc8s6amj7.apps.googleusercontent.com";
 
         private async void Start()
         {
@@ -27,28 +29,67 @@ namespace Domain
             FirebaseApp.DefaultInstance.SetEditorDatabaseUrl("https://hwaiting-df83d.firebaseio.com/");
             _reference = FirebaseDatabase.DefaultInstance.RootReference;
             _auth = FirebaseAuth.DefaultInstance;
+           
         }
 
         public void LogIn()
         {
             Debug.Log("Firebase Login");
- 
+
+            GoogleSignIn.Configuration = new GoogleSignInConfiguration 
+            {
+                WebClientId = WebClientId, 
+                RequestIdToken = true, 
+                UseGameSignIn = false, 
+            };
+
+            var signIn = GoogleSignIn.DefaultInstance.SignIn ();
+
+            var signInCompleted = new TaskCompletionSource<FirebaseUser> ();
+            signIn.ContinueWith (task => {
+                if (task.IsCanceled) {
+                    signInCompleted.SetCanceled ();
+                } else if (task.IsFaulted) {
+                    signInCompleted.SetException (task.Exception);
+                } else {
+
+                    var credential = GoogleAuthProvider.GetCredential ((task).Result.IdToken, null);
+                    _auth.SignInWithCredentialAsync (credential).ContinueWith (authTask => {
+                        if (authTask.IsCanceled) {
+                            signInCompleted.SetCanceled();
+                        } else if (authTask.IsFaulted) {
+                            signInCompleted.SetException(authTask.Exception);
+                        } else {
+                            signInCompleted.SetResult((authTask).Result);
+                        }
+                    });
+                }
+            });
         }
 
         public void LogOut()
         {
             Debug.Log("Firebase Logout");
+            var user = _auth.CurrentUser;
+            if (user == null) return;
+            _auth.SignOut();
+            GoogleSignIn.DefaultInstance.SignOut();
         }
 
         public bool IsLoggedIn()
         {
-            Debug.Log("Firebase Is");
-            return false;
+            var user = _auth.CurrentUser;
+            return user != null;
         }
 
         public void UpdateUserData()
         {
             Debug.Log("Firebase Update");
+            var user = _auth.CurrentUser;
+            if (user == null) return;
+            UserData.userId = user.UserId;
+            UserData.userName = user.DisplayName;
+            MenuScene.finishUpdate = true;
         }
 
         public async void GetHighScore()
@@ -78,11 +119,11 @@ namespace Domain
                 Debug.Log("Not yet");
             });
             Debug.Log("End signin " + ScoreData.bestScore);
+            MenuScene.finishLoadHighScore = true;
         }
 
         public async void SaveScore()
         {
-            //var childUpdates = new Dictionary<string, object> {[FacebookManager.userId] = ScoreData.bestScore};
             await _reference.Child("users").Child(UserData.userId).Child("score").SetValueAsync(ScoreData.bestScore);
         }
 

@@ -77,7 +77,7 @@ namespace Domain
             Debug.Log("Update account info call back");
             UserData.userName = result.ResultDictionary["name"].ToString();
             Debug.Log("fbName: " + UserData.userName);
-            MenuScene.finishUpdate = true;
+            MenuScene.FinishUpdate = true;
         }
     }
 }

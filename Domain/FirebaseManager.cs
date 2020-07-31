@@ -29,7 +29,7 @@ namespace Domain
             FirebaseApp.DefaultInstance.SetEditorDatabaseUrl("https://hwaiting-df83d.firebaseio.com/");
             _reference = FirebaseDatabase.DefaultInstance.RootReference;
             _auth = FirebaseAuth.DefaultInstance;
-           
+           FindObjectOfType<FirebaseNotiController>().Initialize();
         }
 
         public void LogIn()
@@ -89,7 +89,7 @@ namespace Domain
             if (user == null) return;
             UserData.userId = user.UserId;
             UserData.userName = user.DisplayName;
-            MenuScene.finishUpdate = true;
+            MenuScene.FinishUpdate = true;
         }
 
         public async void GetHighScore()
@@ -119,7 +119,7 @@ namespace Domain
                 Debug.Log("Not yet");
             });
             Debug.Log("End signin " + ScoreData.bestScore);
-            MenuScene.finishLoadHighScore = true;
+            MenuScene.FinishLoadHighScore = true;
         }
 
         public async void SaveScore()

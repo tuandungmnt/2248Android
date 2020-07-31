@@ -8,6 +8,7 @@ namespace Domain
         public GameObject linePrefab;
         public GameObject nameTextPrefab;
         public GameObject scoreTextPrefab;
+        public GameObject popUpPrefab;
 
         public GameObject CreateBlock(GameObject parent) 
         {
@@ -30,6 +31,12 @@ namespace Domain
         public GameObject CreateScoreText(GameObject parent) 
         {
             var go = Instantiate(scoreTextPrefab, parent.transform, false);
+            return go;
+        }
+
+        public GameObject CreatePopUp(Transform parent)
+        {
+            var go = Instantiate(popUpPrefab, parent, false);
             return go;
         }
     }

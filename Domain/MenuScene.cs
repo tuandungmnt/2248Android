@@ -23,8 +23,8 @@ namespace Domain
         private bool _oldStatus;
         private bool _newStatus;
         private int _counter;
-        public static bool finishUpdate;
-        public static bool finishLoadHighScore;
+        public static bool FinishUpdate;
+        public static bool FinishLoadHighScore;
         
         private void Start()
         {
@@ -34,13 +34,14 @@ namespace Domain
             
             AddButtonListener();
             StartCoroutine(UpdateScene());
+            FindObjectOfType<PopUpController>().CreatePopUp("Hello");
         }
 
         private void AddButtonListener()
         {
             playButton.onClick.AddListener(() => {
                 _audioManager.Play("Click");
-                finishLoadHighScore = false;
+                FinishLoadHighScore = false;
                 FindObjectOfType<FirebaseManager>().GetHighScore();
                 StartCoroutine(ChangeScene());
             });
@@ -69,7 +70,7 @@ namespace Domain
             _gameUiChanger.ChangePosition(playButton, new Vector2(1000, 38), 0.7f);
             _gameUiChanger.ChangePosition(welcomeText, new Vector2(-1000, 65), 0.7f);
             yield return new WaitForSeconds(0.7f);
-            while (!finishLoadHighScore) yield return new WaitForSeconds(0.1f);
+            while (!FinishLoadHighScore) yield return new WaitForSeconds(0.1f);
                 SceneManager.LoadScene(1);
         }
 
@@ -86,9 +87,9 @@ namespace Domain
 
                 if (_newStatus) 
                 {    
-                    finishUpdate = false;
+                    FinishUpdate = false;
                     _platformManager.UpdateUserData();
-                    while(!finishUpdate) yield return  new WaitForSeconds(0.1f);
+                    while(!FinishUpdate) yield return  new WaitForSeconds(0.1f);
                     
                     userNameText.text = UserData.userName;
                     _gameUiChanger.ChangePosition(facebookLogInButton, new Vector2(-1000, 300), 0.4f);

@@ -28,7 +28,6 @@ namespace Domain
         {
             var s = Array.Find(sounds, sound => sound.name == soundName);
             s?.source.Play();
-            Debug.Log("Play: " + soundName);
         }
     }
 }

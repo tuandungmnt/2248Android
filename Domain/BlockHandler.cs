@@ -1,116 +1,125 @@
-﻿using Data;
+﻿using System;
+using System.Collections;
+using Data;
+using DG.Tweening;
 using Presentation;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Domain
 {
     public class BlockHandler : MonoBehaviour
     {
-        private readonly Color _clickedColor = new Color(0.1f, 0.1f, 0.1f, 0.8f);
-        private readonly Color _notClickedColor = new Color(0.9f, 0.9f, 0.9f, 0.8f);
-        private readonly GameObject[] _line = new GameObject[70];
-        private GameObject _parent;
+        public GameObject parent;
 
         private GameUiChanger _gameUiChanger;
-        private GameUiCreator _gameUiCreator;
+        private BlockCreator _blockCreator;
+        private int _counter;
 
         private void Start()
         {
             _gameUiChanger = FindObjectOfType<GameUiChanger>();
-            _gameUiCreator = FindObjectOfType<GameUiCreator>();
+            _blockCreator = FindObjectOfType<BlockCreator>();
         }
 
-        public void Initialize(GameObject parent)
+        private Vector3 TranslateTablePositionToVector3(int x, int y)
         {
-            _parent = parent;
-        }
- 
-        private Vector2 TranslateTablePositionToVector2(int x, int y)
-        {
-            return new Vector2(-250 + x * 125, 85 + y * 125);
+            return new Vector3(100 + x * 100, 400 + y * 100, 0);
         }
 
-        public BlockData CreateBlock()
+        public BlockData CreateBlock(int x)
         {
-            var block = _parent.AddComponent<BlockData>();
-            block.block = _gameUiCreator.CreateBlock(_parent);
-            block.text = block.block.transform.Find("Text").gameObject.GetComponent<Text>();
-            block.rectTransform = block.block.GetComponent<RectTransform>();
-            block.image = block.block.GetComponent<Image>();
-            
-            _gameUiChanger.SetColor(block.image, _notClickedColor);
+            var block = parent.AddComponent<BlockData>();
+            block.block = _blockCreator.CreateBlock(x);
+            block.block.name = _counter.ToString();
+            _counter++;
+            block.number = x;
+            block.value = (int) Math.Pow(2, x);
+            block.isClicked = false;
             return block;
         }
 
-        public void SetNumber(BlockData block, int number)
+        public GameObject CreateSmallBlock()
         {
-            block.number = number;
-            _gameUiChanger.SetText(block.text, number.ToString());
+            return _blockCreator.CreateSmallBlock();
         }
 
         public void SetPosition(BlockData block, int x, int y)
         {
-            var z = TranslateTablePositionToVector2(x, y);
-            _gameUiChanger.SetPosition(block.rectTransform, z);
+            var z = TranslateTablePositionToVector3(x, y);
+            block.block.transform.position = z;
         }
 
-        public void Click(BlockData block)
+        public void SetPosition(GameObject go, int x, int y)
         {
-            if (block.isClicked) return;
-            block.isClicked = true;
-            _gameUiChanger.SetColor(block.image, _clickedColor);
+            var z = TranslateTablePositionToVector3(x, y);
+            go.transform.position = z;
         }
 
-        public void UndoClick(BlockData block)
+        public void MovePosition(BlockData block, int x, int y, float time)
         {
-            if (!block.isClicked) return;
-            block.isClicked = false;
-            _gameUiChanger.SetColor(block.image, _notClickedColor);
+            var z = TranslateTablePositionToVector3(x, y);
+            block.block.transform.DOMove(z, time);
         }
 
-        public void Match(int n, int block1, int block2, float time)
+        public void MovePosition(GameObject go, int x, int y, float time)
         {
-            _line[n] = _gameUiCreator.CreateLine(_parent);
-            
-            var p1 = TranslateTablePositionToVector2(block1 / 7, block1 % 7);
-            var p2 = TranslateTablePositionToVector2(block2 / 7, block2 % 7);
-            var p3 = new Vector2 {x = (p1.x + p2.x) / 2, y = (p1.y + p2.y) / 2};
-            var p4 = new Vector2 {x = (p3.x + p1.x) / 2, y = (p3.y + p1.y) / 2};
-
-            _gameUiChanger.SetPosition(_line[n], p4);
-            _gameUiChanger.ChangePosition(_line[n], p3, time);
-        }
-        
-        public void UndoMatch(int n, int block1, int block2, float time)
-        {
-            var p1 = TranslateTablePositionToVector2(block1 / 7, block1 % 7);
-            var p2 = TranslateTablePositionToVector2(block2 / 7, block2 % 7);
-            var p3 = new Vector2 {x = (3 * p1.x + p2.x) / 4, y = (3 * p1.y + p2.y) / 4};
-
-            _gameUiChanger.ChangePosition(_line[n], p3, time);
-            Destroy(_line[n], 0.1f);
+            var z = TranslateTablePositionToVector3(x, y);
+            go.transform.DOMove(z, time);
         }
 
-        public void DestroyLine(int n)
+        public void Rotate(BlockData block, Vector3 x, float time)
         {
-            Destroy(_line[n]);
-        }
-        public void Move(BlockData block, int x, int y, float time)
-        {
-            var z = TranslateTablePositionToVector2(x, y);
-            _gameUiChanger.ChangePosition(block.rectTransform, z, time);
-        }
-
-        public void ChangeNumber(BlockData block, int newNum)
-        {
-            StartCoroutine(_gameUiChanger.CoChangeNumber(block.text, block.number, newNum));
-            block.number = newNum;
+            block.block.transform.DORotate(x, time);
         }
 
         public void ShakePosition(BlockData block, float time)
         {
-            _gameUiChanger.ShakePosition(block.block, time);
+            block.block.transform.DOShakePosition(time, new Vector3(6f, 3f, 3f), 5, 20);
+        }
+
+        public void Delete(BlockData x, BlockData y)
+        {
+            StartCoroutine(Delete1(x.block, y.block));
+        }
+
+        private IEnumerator Delete1(GameObject x, GameObject y)
+        {
+            var z = CreateSmallBlock();
+            z.transform.position = x.transform.position;
+
+            x.transform.DOScale(new Vector3(10, 10, 10), 0.5f);
+            Destroy(x, 0.4f);
+
+            z.transform.DOScale(new Vector3(30, 30, 30), 0.2f);
+            yield return new WaitForSeconds(0.5f);
+            z.transform.DOMove(y.transform.position, 0.4f);
+            Destroy(z, 0.4f);
+        }
+
+        public void ChangeNumber(BlockData block, int number)
+        {
+            block.number = number;
+            block.value = (int) Math.Pow(2, number);
+            StartCoroutine(ChangeNumber1(block, number));
+        }
+
+        private IEnumerator ChangeNumber1(BlockData block, int number)
+        {
+            var x = block.block;
+            var y = _blockCreator.CreateBlock(number);
+
+            y.transform.position = x.transform.position;
+            y.transform.DORotate(new Vector3(0, 180, -135), 0f);
+            
+            x.transform.DORotate(new Vector3(0, -90, -135), 0.4f);
+            y.transform.DORotate(new Vector3(0, 90, -135), 0.4f);
+            yield return new WaitForSeconds(0.3f);
+
+            x.transform.DORotate(new Vector3(0, 180, -135), 0.4f);
+            y.transform.DORotate(new Vector3(0, 0, -135), 0.4f);
+            
+            Destroy(x, 0.4f);
+            block.block = y;
         }
     }
 }

@@ -21,7 +21,7 @@ namespace Domain
         private void OnMessageReceived(object sender, MessageReceivedEventArgs e)
         {
             Debug.Log("Received Message From:" + e.Message.From);
-            FindObjectOfType<PopUpController>().CreatePopUp(e.Message.Data.Values.ToString());
+            //FindObjectOfType<PopUpController>().CreatePopUp(e.Message.Data.Values.ToString());
         }
     }
 }

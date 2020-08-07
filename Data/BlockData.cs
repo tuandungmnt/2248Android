@@ -7,9 +7,7 @@ namespace Data
     {
         public GameObject block;
         public int number;
+        public int value;
         public bool isClicked;
-        public Text text;
-        public RectTransform rectTransform;
-        public Image image;
     }
 }

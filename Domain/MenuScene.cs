@@ -34,7 +34,6 @@ namespace Domain
             
             AddButtonListener();
             StartCoroutine(UpdateScene());
-            FindObjectOfType<PopUpController>().CreatePopUp("Hello");
         }
 
         private void AddButtonListener()

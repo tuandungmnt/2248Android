@@ -10,9 +10,11 @@ namespace Domain
     public class GameController : MonoBehaviour
     {
         public BlockData[] block;
-        public GameObject canvas;
         public Text scoreText;
-
+        public LineRenderer line;
+        public LineRenderer line2;
+        public GameObject[] smallBLock;
+        
         private readonly System.Random _rand = new System.Random();
         private int _stackN;
         private int[] _stack;
@@ -30,24 +32,44 @@ namespace Domain
             _blockHandler = FindObjectOfType<BlockHandler>();
             _gameUiChanger = FindObjectOfType<GameUiChanger>();
             
-            _blockHandler.Initialize(canvas);
-            block = new BlockData[35];
-            _stack = new int[35];
-            _down = new int[35];
+            block = new BlockData[70];
+            smallBLock = new GameObject[70];
+            _stack = new int[70];
+            _down = new int[70];
             _stackN = 0;
             ScoreData.currentScore = 0;
 
-            for (var i = 0; i < 5; ++i)
-            for (var j = 0; j < 7; ++j)
+            for (var i = 0; i < 7; ++i)
+            for (var j = 0; j < 9; ++j)
             {
-                var x = i * 7 + j;
-                block[x] = _blockHandler.CreateBlock();
+                if ((i + j) % 2 != 0) continue;
+                var x = i * 9 + j;
+                Debug.Log("CHam Hoi");
+                block[x] = _blockHandler.CreateBlock(Rand());
                 _blockHandler.SetPosition(block[x], i, j + 4);
-                _blockHandler.SetNumber(block[x], Rand());
-                _blockHandler.Move(block[x], i, j, 0.5f);
+                _blockHandler.MovePosition(block[x], i, j, 0.5f);
             }
 
             StartCoroutine(Play());
+        }
+
+        private void Update()
+        {
+            if (_stackN == 0) line2.positionCount = 0;
+            else
+            {
+                var x = block[_stack[_stackN - 1]];
+                var y = x.block.transform.position;
+                var z = GameInput.MouseWorldPosition();
+                line2.positionCount = 2;
+                line2.SetPosition(0, y);
+                line2.SetPosition(1, z);
+
+                var a = (z.x - y.x) / 7f; 
+                var b = (z.y - y.y) / 7f;
+            
+                _blockHandler.Rotate(x,new Vector3(b, -a, -135), 0.8f);
+            }
         }
 
         private IEnumerator Play()
@@ -58,6 +80,7 @@ namespace Domain
                 if (GameInput.isPressed)
                 {
                     yield return FindMouseOnBlock();
+                    Debug.Log("Block: " + _currentBlock);
                     if (_currentBlock == -1) continue;
 
                     if (RemoveBlockFromList()) continue;
@@ -66,11 +89,12 @@ namespace Domain
                 }
                 else
                 {
-                    if (_stackN == 1) _blockHandler.UndoClick(block[_stack[0]]);
-
+                    if (_stackN == 1) block[_stack[0]].isClicked = false;
                     if (_stackN > 1) yield return SolveList();
                     
                     _stackN = 0;
+                    line.positionCount = 0;
+                    continue;
                     if (!CheckEndGame()) continue;
 
                     yield return new WaitForSeconds(1.5f);
@@ -89,15 +113,16 @@ namespace Domain
         private IEnumerator FindMouseOnBlock()
         {
             _currentBlock = -1;
+            var n = GameInput.MouseOnBlockName();
+            if (n == null) yield break;
 
-            for (var i = 0; i < 35; ++i)
+            for (var i = 0; i < 7; ++i)
+            for (var j = 0; j < 9; ++j)
             {
-                var p = block[i].block.transform.position;
-                if (!GameInput.IsMouseOnBlock(p.x, p.y)) continue;
-                _currentBlock = i;
-                break;
+                if ((i + j) % 2 != 0) continue;
+                var x = i * 9 + j;
+                if (block[x].block.name == n) _currentBlock = x;
             }
-
             yield return null;
         }
 
@@ -105,8 +130,8 @@ namespace Domain
         {
             if (_stackN <= 1 || _stack[_stackN - 2] != _currentBlock) return false;
             _audioManager.Play("Turn");
-            _blockHandler.UndoClick(block[_stack[_stackN - 1]]);
-            _blockHandler.UndoMatch(_stackN - 1, _stack[_stackN - 2], _stack[_stackN - 1], 0.1f);
+            block[_currentBlock].isClicked = false;
+            line.positionCount--;
             _stackN--;
             return true;
         }
@@ -120,7 +145,7 @@ namespace Domain
                 var topNumber = block[_stack[_stackN - 1]].number;
                 var currentNumber = block[_currentBlock].number;
                 if (_stackN == 1 && topNumber == currentNumber) check = true;
-                if (_stackN > 1 && (topNumber == currentNumber || 2 * topNumber == currentNumber)) check = true;
+                if (_stackN > 1 && (topNumber == currentNumber || topNumber + 1 == currentNumber)) check = true;
                 if (!CheckAdjacent(_currentBlock, _stack[_stackN - 1])) check = false;
             }
 
@@ -128,40 +153,43 @@ namespace Domain
             _audioManager.Play("Turn");
             _stack[_stackN] = _currentBlock;
             _stackN++;
-            _blockHandler.Click(block[_currentBlock]);
-            if (_stackN > 1)
-                _blockHandler.Match(_stackN - 1, _stack[_stackN - 2], _stack[_stackN - 1], 0.1f);
+            block[_currentBlock].isClicked = true;
+            line.positionCount++;
+            line.SetPosition(_stackN - 1, block[_currentBlock].block.transform.position);
         }
 
         private IEnumerator SolveList()
         {
             _audioManager.Play("Delete");
-            for (var i = 1; i < _stackN; ++i)
-            {
-                _blockHandler.DestroyLine(i);
-                var x = _stack[i] / 7;
-                var y = _stack[i] % 7;
-                for (var j = 0; j < i; ++j)
-                {
-                    _blockHandler.Move(block[_stack[j]], x, y, 0.08f);
-                }
-
-                yield return new WaitForSeconds(0.08f);
-            }
 
             var sum = 0;
             for (var i = 0; i < _stackN; ++i)
-                sum += block[_stack[i]].number;
+                sum += block[_stack[i]].value;
             AddScore(sum);
+            
+            var s = 0;
+            while ((int) Math.Pow(2, s) <= sum) s++;
+            s--;
+            
+            line.positionCount = 0;
+            for (var i = 0; i < _stackN - 1; ++i)
+                _blockHandler.Delete(block[_stack[i]], block[_stack[_stackN - 1]]);
+            
+            yield return new WaitForSeconds(0.9f);
+            _blockHandler.ChangeNumber(block[_stack[_stackN-1]], s);
+            block[_stack[_stackN - 1]].isClicked = false;
 
-            var s = 2;
-            var k = 0;
-            while (s <= sum) s *= 2;
-            s /= 2;
+            for (var i = 0; i < 7; ++i)
+            {
 
-            _blockHandler.UndoClick(block[_stack[_stackN - 1]]);
+                for (var j = i % 2; j < 9; j += 2)
+                {
+                    
+                } 
+            }
 
-            for (var i = 0; i < 5; ++i)
+
+            /*for (var i = 0; i < 5; ++i)
             {
                 var p = 0;
                 var c = 0;
@@ -183,7 +211,7 @@ namespace Domain
                     }
                     else
                     {
-                        _blockHandler.UndoClick(block[x]);
+                        //_blockHandler.UndoClick(block[x]);
                         c++;
                     }
                 }
@@ -191,26 +219,21 @@ namespace Domain
                 for (var j = p; j < 7; ++j)
                 {
                     var x = i * 7 + j;
-                    _blockHandler.SetNumber(block[x], Rand());
+                    //_blockHandler.SetNumber(block[x], Rand());
                     _blockHandler.SetPosition(block[x], i, j + c);
                     _down[x] = c;
                 }
             }
 
-            _blockHandler.ChangeNumber(block[k], s);
+            //_blockHandler.ChangeNumber(block[k], s);
             for (var i = 0; i < 35; ++i)
-                _blockHandler.Move(block[i], i / 7, i % 7, 0.6f);
+                _blockHandler.MovePosition(block[i], i / 7, i % 7, 0.6f);
             yield return null;
-        }
-
-        private int Rand()
-        {
-            var x = _rand.Next(1, 5); //isToggleOn ? _rand.Next(4, 11) : _rand.Next(1, 5);
-            return (int) Math.Pow(2, x);
+            */
         }
         
-        private static bool CheckAdjacent(int x,int y) {
-            return Math.Abs(x / 7 - y / 7) + Math.Abs(x % 7 - y % 7) == 1;
+        private bool CheckAdjacent(int x,int y) {
+            return Math.Abs(x / 9 - y / 9) + Math.Abs(x % 9 - y % 9) == 2;
         }
 
         private void AddScore(int score)
@@ -241,6 +264,10 @@ namespace Domain
             }
 
             return true;
+        }
+        private int Rand()
+        {
+            return _rand.Next(1, 5); //isToggleOn ? _rand.Next(4, 11) : _rand.Next(1, 5);
         }
     }
 }

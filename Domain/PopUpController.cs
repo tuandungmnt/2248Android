@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections;
 using Presentation;
 using UnityEngine;
@@ -11,7 +10,7 @@ namespace Domain
     public class PopUpController : MonoBehaviour
     {
         private GameUiChanger _gameUiChanger;
-
+        private GameObject _go;
 
         private void Start()
         {
@@ -21,20 +20,21 @@ namespace Domain
         public void CreatePopUp(string message)
         {
             var canvas = FindObjectOfType<Canvas>();
-            var x = FindObjectOfType<GameUiCreator>().CreatePopUp(canvas.transform);
-            _gameUiChanger.SetPosition(x, new Vector2(0, 150));
-            _gameUiChanger.ChangePosition(x, new Vector2(0, -25), 0.5f);
+            _go = FindObjectOfType<GameUiCreator>().CreatePopUp(canvas.transform);
+            _gameUiChanger.SetPosition(_go, new Vector2(0, 150));
+            var x = _go.transform.position;
+            x.z = 1;
+            _go.transform.position = x;
+            _gameUiChanger.ChangePosition(_go, new Vector2(0, -25), 0.5f);
 
-            var y = x.GetComponent<Button>();
-            y.onClick.AddListener(() =>
+            _go.GetComponent<Button>().onClick.AddListener(() =>
             {
-                _gameUiChanger.ChangePosition(x, new Vector2(0, -25), 0.5f);
-                Destroy(x, 0.6f);
+                Debug.Log("Hay The");
+                _gameUiChanger.ChangePosition(_go, new Vector2(0, -25), 0.5f);
+                Destroy(_go, 0.6f);
                 //StartCoroutine(SwipePopUp(x));
             });
-
-            var z = x.GetComponentInChildren<Text>();
-            z.text = message;
+            _go.GetComponentInChildren<Text>().text = message;
         }
 
         private IEnumerator SwipePopUp(GameObject go)

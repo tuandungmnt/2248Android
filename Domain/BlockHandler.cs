@@ -2,7 +2,6 @@
 using System.Collections;
 using Data;
 using DG.Tweening;
-using Presentation;
 using UnityEngine;
 
 namespace Domain
@@ -11,30 +10,26 @@ namespace Domain
     {
         public GameObject parent;
 
-        private GameUiChanger _gameUiChanger;
         private BlockCreator _blockCreator;
-        private int _counter;
 
         private void Start()
         {
-            _gameUiChanger = FindObjectOfType<GameUiChanger>();
             _blockCreator = FindObjectOfType<BlockCreator>();
         }
 
         private Vector3 TranslateTablePositionToVector3(int x, int y)
         {
-            return new Vector3(100 + x * 100, 400 + y * 100, 0);
+            return new Vector3(100 + x * 100, 200 + y * 100, 0);
         }
 
-        public BlockData CreateBlock(int x)
+        public BlockData CreateBlock(int number, int x, int y)
         {
             var block = parent.AddComponent<BlockData>();
-            block.block = _blockCreator.CreateBlock(x);
-            block.block.name = _counter.ToString();
-            _counter++;
-            block.number = x;
-            block.value = (int) Math.Pow(2, x);
+            block.block = _blockCreator.CreateBlock(number);
+            block.number = number;
+            block.value = (int) Math.Pow(2, number);
             block.isClicked = false;
+            SetPosition(block, x, y);
             return block;
         }
 
@@ -61,12 +56,6 @@ namespace Domain
             block.block.transform.DOMove(z, time);
         }
 
-        public void MovePosition(GameObject go, int x, int y, float time)
-        {
-            var z = TranslateTablePositionToVector3(x, y);
-            go.transform.DOMove(z, time);
-        }
-
         public void Rotate(BlockData block, Vector3 x, float time)
         {
             block.block.transform.DORotate(x, time);
@@ -79,10 +68,10 @@ namespace Domain
 
         public void Delete(BlockData x, BlockData y)
         {
-            StartCoroutine(Delete1(x.block, y.block));
+            StartCoroutine(CoDelete(x.block, y.block));
         }
 
-        private IEnumerator Delete1(GameObject x, GameObject y)
+        private IEnumerator CoDelete(GameObject x, GameObject y)
         {
             var z = CreateSmallBlock();
             z.transform.position = x.transform.position;
@@ -100,13 +89,14 @@ namespace Domain
         {
             block.number = number;
             block.value = (int) Math.Pow(2, number);
-            StartCoroutine(ChangeNumber1(block, number));
+            StartCoroutine(CoChangeNumber(block, number));
         }
 
-        private IEnumerator ChangeNumber1(BlockData block, int number)
+        private IEnumerator CoChangeNumber(BlockData block, int number)
         {
             var x = block.block;
             var y = _blockCreator.CreateBlock(number);
+            block.block = y;
 
             y.transform.position = x.transform.position;
             y.transform.DORotate(new Vector3(0, 180, -135), 0f);
@@ -119,7 +109,23 @@ namespace Domain
             y.transform.DORotate(new Vector3(0, 0, -135), 0.4f);
             
             Destroy(x, 0.4f);
-            block.block = y;
+        }
+
+        public void RecreateBlock(BlockData block, int number, int x, int  y) 
+        {
+            block.number = number;
+            block.value = (int) Math.Pow(2, number);
+            block.isClicked = false;
+            StartCoroutine(CoRecreateBlock(block, number, x, y));
+        }
+
+        private IEnumerator CoRecreateBlock(BlockData block, int number, int x, int y)
+        {
+            block.block = _blockCreator.CreateBlock(number);
+            block.block.transform.DOScale(new Vector3(1, 1, 1), 0f);
+            yield return new WaitForSeconds(0.5f);
+            SetPosition(block, x, y);
+            block.block.transform.DOScale(new Vector3(80, 80, 80), 0.5f);
         }
     }
 }

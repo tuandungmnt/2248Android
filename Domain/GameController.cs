@@ -13,13 +13,11 @@ namespace Domain
         public Text scoreText;
         public LineRenderer line;
         public LineRenderer line2;
-        public GameObject[] smallBLock;
         
         private readonly System.Random _rand = new System.Random();
         private int _stackN;
         private int[] _stack;
         private BlockData _tmp;
-        private int[] _down;
         private int _currentBlock;
 
         private AudioManager _audioManager;
@@ -33,9 +31,7 @@ namespace Domain
             _gameUiChanger = FindObjectOfType<GameUiChanger>();
             
             block = new BlockData[70];
-            smallBLock = new GameObject[70];
             _stack = new int[70];
-            _down = new int[70];
             _stackN = 0;
             ScoreData.currentScore = 0;
 
@@ -44,9 +40,7 @@ namespace Domain
             {
                 if ((i + j) % 2 != 0) continue;
                 var x = i * 9 + j;
-                Debug.Log("CHam Hoi");
-                block[x] = _blockHandler.CreateBlock(Rand());
-                _blockHandler.SetPosition(block[x], i, j + 4);
+                block[x] = _blockHandler.CreateBlock(Rand(), i,  j + 4);
                 _blockHandler.MovePosition(block[x], i, j, 0.5f);
             }
 
@@ -94,7 +88,6 @@ namespace Domain
                     
                     _stackN = 0;
                     line.positionCount = 0;
-                    continue;
                     if (!CheckEndGame()) continue;
 
                     yield return new WaitForSeconds(1.5f);
@@ -102,7 +95,6 @@ namespace Domain
                     for (var i = 0; i < 35; ++i)
                         _blockHandler.ShakePosition(block[i], 1.5f);
                     yield return new WaitForSeconds(2f);
-                    //Debug.Log("EndGame");
 
                     FindObjectOfType<GameScene>().ChangeScene();
                     break;
@@ -130,7 +122,7 @@ namespace Domain
         {
             if (_stackN <= 1 || _stack[_stackN - 2] != _currentBlock) return false;
             _audioManager.Play("Turn");
-            block[_currentBlock].isClicked = false;
+            block[_stack[_stackN - 1]].isClicked = false;
             line.positionCount--;
             _stackN--;
             return true;
@@ -165,27 +157,48 @@ namespace Domain
             var sum = 0;
             for (var i = 0; i < _stackN; ++i)
                 sum += block[_stack[i]].value;
-            AddScore(sum);
-            
+
             var s = 0;
             while ((int) Math.Pow(2, s) <= sum) s++;
             s--;
             
+            var lastBlock = block[_stack[_stackN - 1]];
             line.positionCount = 0;
             for (var i = 0; i < _stackN - 1; ++i)
-                _blockHandler.Delete(block[_stack[i]], block[_stack[_stackN - 1]]);
+                _blockHandler.Delete(block[_stack[i]], lastBlock);
+            _stackN = 0;
             
             yield return new WaitForSeconds(0.9f);
-            _blockHandler.ChangeNumber(block[_stack[_stackN-1]], s);
-            block[_stack[_stackN - 1]].isClicked = false;
+            _blockHandler.ChangeNumber(lastBlock, s);
+            lastBlock.isClicked = false;
+            AddScore(sum);
+            
+            yield return new WaitForSeconds(0.8f);
 
             for (var i = 0; i < 7; ++i)
             {
-
+                var p = i % 2;
                 for (var j = i % 2; j < 9; j += 2)
                 {
-                    
-                } 
+                    var x = i * 9 + j;
+                    var y = i * 9 + p;
+
+                    if (!block[x].isClicked)
+                    {
+                        _tmp = block[x];
+                        block[x] = block[y];
+                        block[y] = _tmp;
+                        _blockHandler.MovePosition(block[y], i, p, 0.5f);
+
+                        p += 2;
+                    } 
+                }
+
+                for (var j = p; j < 9; j += 2)
+                {
+                    var x = i * 9 + j;
+                    _blockHandler.RecreateBlock(block[x], Rand(), i, j);
+                }
             }
 
 
@@ -245,20 +258,20 @@ namespace Domain
 
         private bool CheckEndGame()
         {
-            int[] s1 = {-1, 0, 1, 0};
-            int[] s2 = {0, 1, 0, -1};
+            int[] s1 = {-1, 1, 1, -1, 0, 0, 2, -2};
+            int[] s2 = {1, -1, 1, -1, 2, -2, 0, 0};
             
-            for (var i = 0; i < 5; ++i)
-            for (var j = 0; j < 7; ++j)
+            for (var i = 0; i < 7; ++i)
+            for (var j = i % 2; j < 9; j += 2)
             {
-                var b = i * 7 + j;
-                for (var k = 0; k < 4; ++k)
+                var b = i * 9 + j;
+                for (var k = 0; k < 8; ++k)
                 {
                     var x = i + s1[k];
                     var y = j + s2[k];
-                    var z = x * 7 + y;
-                    if (x < 0 || x >= 5) continue;
-                    if (y < 0 || y >= 7) continue;
+                    var z = x * 9 + y;
+                    if (x < 0 || x >= 7) continue;
+                    if (y < 0 || y >= 9) continue;
                     if (block[b].number == block[z].number) return false;
                 }
             }
